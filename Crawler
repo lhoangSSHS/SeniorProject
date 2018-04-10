@@ -1,0 +1,199 @@
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.util.List;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class Crawler {
+
+	public static void main(String[] args) throws IOException {
+		// initialize a file path String, which will be read by scanExtractSave
+		// method later
+		String filepath = "";
+
+		// initialize two ArrayList of String variable type
+		// holder string is used to hold all of the extracted URLs links
+		// obtained by
+		// the scanExtractSave method
+
+		// Results method is another ArrayList used to save the extracted URLs
+		// from the another list
+		List<String> holder = new ArrayList<String>();
+		List<String> results = new ArrayList<String>();
+
+		// This is a seed or the URLs that this crawler will start from
+		String urlStr1 = "https://docs.oracle.com/javase/7/docs/api/java/net/MalformedURLException.html";
+
+		// add the seed to the holder ArrayList which will be read getSaveURL
+		// method
+		holder.add(urlStr1);
+
+		// limit the number of html source codes that will be extracted with
+		// this crawler
+		int limit = 70;
+
+		// for keeping track of how many html source have been extracted
+		int counter = 0;
+
+		// while counter is less than limit proceed
+		while (counter < limit) {
+			// change the content inside holder to String to be read by
+			// getSaveURL
+			for (String temp : holder) {
+				// print out the web site that getSaveURL will read from
+				System.out.println(temp);
+
+				// after getSaveURL is done processing the URL it will save the
+				// html code to a text file this make it so that the String
+				// filepath will point to the location of the text file
+				filepath = Crawler.getSaveURL(temp, counter);
+
+				// create a new a array every time it passes through the
+				// scanExtractSave method with a new file path
+				List<String> newList = Crawler.scanExtractSave(filepath, holder);
+				// this list is to hold the URLs obtained by the method from the
+				// given file
+
+				// add 1 to the counter after a file have been scanned
+				counter++;
+
+				// print out the counter to show how many files have this
+				// scanned
+				System.out.println(counter);
+
+				// this if check is to see if the counter is bigger than the set
+				// limit, if it is then it will stop this whole loop
+				if (counter > limit) {
+					break;
+				}
+				// add all of the content in newList to results
+				results.addAll(newList);
+			}
+
+			// then make the holder list contains the same element in the
+			// results ListArray
+			holder = results;
+
+			// clear the result list for the next loop
+			results = new ArrayList<String>();
+		}
+
+		// make a new file in to write the URLs link into
+		File file2 = new File("extractedURLs.txt");
+
+		// Initializing writer
+		PrintWriter writer = new PrintWriter(file2);
+
+		// convert contents in holder ArrayList to a String then using writer to
+		// write the String to the file
+		for (String write : holder) {
+			writer.println(write);
+
+		}
+
+		writer.close(); // end the writer
+		System.out.println("End of program"); // signal the end of the program
+	}
+
+	// this method main job is to connect to the Internet and save the html
+	// source code from a web site to a file
+	// the method parameter take in the URLs originally from the seed, but after
+	// one pass it will take it in from the holder arrayList
+	public static String getSaveURL(String urlStr, int number) {
+		URL url;
+		String out = "";
+		try {
+			// starts a new Internet connection
+			url = new URL(urlStr);
+			URLConnection conn = url.openConnection();
+			// initializing a reader that will read from the connected URLs
+			BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+			// Prepare a file to write the content to
+			String outputFileName = "C:\\Users\\Hoang\\workspace\\SenoirProject\\file" + number + ".html";
+			out = outputFileName;
+			File file = new File(outputFileName);
+			// if this file name doesn't exist yet create a new one, if it does
+			// this will overwrite the text file
+			if (!file.exists()) {
+				file.createNewFile();
+			}
+
+			// initializing a buffer to copy the html codes to a text file
+			FileWriter fwriter = new FileWriter(file.getAbsoluteFile());
+			BufferedWriter bw = new BufferedWriter(fwriter);
+
+			// basically what a buffer does is it will copy any type of
+			// variables and paste it in another location
+			char[] buffer = new char[1024]; // this indicate how many bytes
+											// (1024 byte is about 1 kilobyte)
+											// will
+											// be allocated to hold the content
+
+			int nbytes;
+			// while there are still content in the buffer write it to the file
+			while ((nbytes = br.read(buffer, 0, 1024)) != -1) {
+				bw.write(buffer, 0, nbytes);
+			}
+
+			bw.close();
+			br.close();
+
+			System.out.println("finish");
+
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return out;
+
+	}
+
+	// this method main job is to scan and extract other URLs from the html
+	// source code file created from the above method
+	public static List<String> scanExtractSave(String filepath, List<String> holder) throws IOException {
+		// new list to convert the content of the file to a buffer
+		List<String> newList = new ArrayList<String>();
+		StringBuilder contentBuffer = new StringBuilder();
+		String fileScan = filepath;
+		File file = new File(fileScan);
+		Scanner scanner = new Scanner(file);
+		while (scanner.hasNext()) {
+			contentBuffer.append(scanner.next());
+			contentBuffer.append(" ");
+		}
+		scanner.close();
+		// close the Scanner
+
+		// convert the buffer to a string
+		String contents = contentBuffer.toString();
+
+		// This is a pattern it is use to find a certain repetition in string
+		// here in my patter I have two group first is find string that have (<a
+		// href) in it then it find a group that have http then something after
+		// (usually a link)
+		String patternStr = "(?i)<a href=\"(http[^\"]*)\"";
+		Pattern p = Pattern.compile(patternStr);
+		Matcher m = p.matcher(contents);
+		//System.out.println("test");
+		while (m.find()) {
+			String hrefStr = m.group(1);
+			newList.add(hrefStr);
+		}
+
+		return newList;
+
+	}
+
+}
