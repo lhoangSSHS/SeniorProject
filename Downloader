@@ -1,0 +1,53 @@
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+
+
+public class download {
+
+	public static void main(String[] args) {
+
+		String urlStr = "https://docs.oracle.com/javase/7/docs/api/java/net/MalformedURLException.html";
+		URL url;
+
+		try {
+
+			url = new URL(urlStr);
+			URLConnection conn = url.openConnection();
+			
+			BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+			String outputFileName = "C:\\Users\\Hoang\\workspace\\SenoirProject\\URL.html";
+			File file = new File(outputFileName);
+
+			if (!file.exists()) {
+				file.createNewFile();
+			}
+
+			FileWriter fwriter = new FileWriter(file.getAbsoluteFile());
+			BufferedWriter bw = new BufferedWriter(fwriter);
+		
+			char[] buffer = new char[1024];
+			int nbytes;
+			while ((nbytes = br.read(buffer, 0, 1024)) != -1) {
+				bw.write(buffer, 0, nbytes);
+			}
+
+			bw.close();
+			br.close();
+
+			System.out.println("finish");
+
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+}
